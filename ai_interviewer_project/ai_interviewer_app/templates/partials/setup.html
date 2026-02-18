@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <style>
+  /* ===== SETUP SCREEN ===== */
+  #setup {
+    min-height: 100vh;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    position: relative;
+  }
+  #setup.active { display: flex; }
+  .setup-card { width: 100%; max-width: 28rem; position: relative; z-index: 10; }
+  .setup-header { text-align: center; margin-bottom: 2.5rem; }
+  .setup-icon { display: inline-flex; align-items: center; justify-content: center; width: 4rem; height: 4rem; border-radius: 1rem; margin-bottom: 1.5rem; }
+  .setup-title { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+  .setup-subtitle { color: hsl(var(--muted-fg)); font-size: 0.875rem; }
+  .form-group { margin-bottom: 1.25rem; }
+  .form-label { display: block; font-size: 0.75rem; font-weight: 500; color: hsl(var(--secondary-fg)); margin-bottom: 0.5rem; }
+  .form-label svg { display: inline; vertical-align: -2px; margin-right: 4px; }
+  .form-input, .form-select {
+    width: 100%; height: 2.75rem; padding: 0 0.75rem; border-radius: 0.75rem; font-size: 0.875rem;
+    background: hsl(var(--muted) / 0.5); border: 1px solid hsl(var(--border) / 0.5); color: hsl(var(--fg));
+    font-family: inherit; outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus { border-color: hsl(var(--primary)); }
+  .form-select option { background: hsl(var(--card)); color: hsl(var(--fg)); }
+  .exp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .exp-btn {
+    padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+    border: 1px solid hsl(var(--border) / 0.5); background: hsl(var(--muted) / 0.3); color: hsl(var(--muted-fg));
+    font-family: inherit; transition: all 0.2s;
+  }
+  .exp-btn:hover { border-color: hsl(var(--primary) / 0.4); background: hsl(var(--muted) / 0.5); }
+  .exp-btn.selected { border-color: hsl(var(--primary)); background: hsl(var(--primary) / 0.15); color: hsl(var(--primary)); }
+  </style>
+</head>
+<body>
+  <!-- ===== SETUP SCREEN ===== -->
+  <div id="setup" class="screen active">
+    <div class="orb" style="top:5rem;left:25%;width:18rem;height:18rem;background:hsl(var(--primary)/0.1);filter:blur(120px)"></div>
+    <div class="orb" style="bottom:5rem;right:25%;width:16rem;height:16rem;background:hsl(var(--accent)/0.1);filter:blur(100px);animation-delay:-3s"></div>
+    <div class="setup-card animate-fade-in">
+      <div class="setup-header">
+        <div class="setup-icon gradient-primary glow-primary">
+          <svg class="icon-xl" fill="none" stroke="hsl(var(--primary-fg))" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+        </div>
+        <h1 class="setup-title">AI <span class="text-gradient">Interviewer</span></h1>
+        <p class="setup-subtitle">Let's set up your personalized mock interview</p>
+      </div>
+      <div class="glass" style="border-radius:1rem;padding:2rem">
+        <div class="form-group">
+          <label class="form-label" for="inp-name">Full Name</label>
+          <input class="form-input" id="inp-name" placeholder="John Doe" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">💼 Target Role</label>
+          <select class="form-select" id="inp-role">
+            <option value="">Select a role</option>
+            <option>Frontend Developer</option><option>Backend Developer</option>
+            <option>Full Stack Developer</option><option>Data Scientist</option>
+            <option>DevOps Engineer</option><option>Mobile Developer</option>
+            <option>Product Manager</option><option>UI/UX Designer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Experience Level</label>
+          <div class="exp-grid" id="exp-grid">
+            <button class="exp-btn" data-val="0-2 ">Junior (0-2 yrs)</button>
+            <button class="exp-btn" data-val="2-5">Mid-Level (2-5 yrs)</button>
+            <button class="exp-btn" data-val="5-8 ">Senior (5-8 yrs)</button>
+            <button class="exp-btn" data-val="8+">Lead/Staff (8+ yrs)</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="inp-tech">🧑‍💻 Tech Stack / Skills</label>
+          <input class="form-input" id="inp-tech" placeholder="React, TypeScript, Node.js..." />
+        </div>
+        <button class="btn-primary" id="btn-start" disabled>Start Interview →</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    
+  // ===== SETUP SCREEN LOGIC =====
+  const expBtns = document.querySelectorAll('.exp-btn');
+
+  expBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedExp = btn.dataset.val;
+      expBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      checkValid();
+    });
+  });
+
+  // CSRF helper (Django default)
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  }
+
+  function checkValid() {
+    const nameOk = $('inp-name').value.trim() !== '';
+    const roleOk = $('inp-role').value !== '';
+    const expOk = !!selectedExp;
+    const techOk = $('inp-tech').value.trim() !== '';
+    $('btn-start').disabled = !(nameOk && roleOk && expOk && techOk);
+  }
+
+  $('inp-name').addEventListener('input', checkValid);
+  $('inp-role').addEventListener('change', checkValid);
+  $('inp-tech').addEventListener('input', checkValid);
+
+  async function createInterviewSession() {
+    try {
+      const csrftoken = getCookie('csrftoken');
+      const payload = {
+        name: $('inp-name').value.trim(),
+        role: $('inp-role').value,
+        experience: selectedExp,
+        skills: $('inp-tech').value.trim(),
+        type: isVoiceMode ? 'voice' : 'text',
+      };
+
+      console.log("payload-:",payload)
+
+      const res = await fetch('/start-interview/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken || '',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        console.error('Failed to start interview', res.status);
+        return;
+      }
+
+      const data = await res.json();
+      // Store IDs globally for later API calls (submit answers, scorecard)
+      console.log(data.session_id)
+      if (data.session_id) {
+        sessionStorage.setItem("currentInterviewSessionId", data.session_id);
+      } else {
+        alert("Session ID not generated. Please retry.");
+      }
+      window.currentInterviewQaId = data.qa_id;
+      window.currentInterviewFirstQuestion = data.question;
+    } catch (err) {
+      console.error('Error starting interview session', err);
+    }
+  }
+
+  $('btn-start').addEventListener('click', async () => {
+    profile = {
+      name: $('inp-name').value.trim(),
+      role: $('inp-role').value,
+      experienceLevel: selectedExp,
+      techStack: $('inp-tech').value.trim()
+    };
+    await createInterviewSession();
+    startInterview();
+  });
+  </script>
+</body>
+</html>
+
+

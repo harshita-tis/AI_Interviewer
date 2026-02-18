@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+  /* ===== SCORECARD SCREEN ===== */
+  #scorecard {
+    display: none;
+    min-height: 100vh;
+    padding: 1rem;
+    position: relative;
+  }
+  #scorecard.active { display: block; }
+  .sc-container { max-width: 56rem; margin: 0 auto; position: relative; z-index: 10; }
+  .sc-section { border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.25rem; }
+  @media (min-width: 768px) {
+    .sc-section { padding: 2rem; }
+    #scorecard { padding: 2rem; }
+  }
+  .sc-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: hsl(var(--muted-fg));
+    font-weight: 500;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sc-name { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
+  .sc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: hsl(var(--muted-fg));
+    margin-bottom: 1rem;
+  }
+  .sc-role { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; }
+  .sc-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .sc-info-card {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+  .sc-info-card .label {
+    font-size: 0.65rem;
+    color: hsl(var(--muted-fg));
+    margin-bottom: 0.25rem;
+  }
+  .sc-info-card .value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .sc-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sc-round-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .sc-round-card {
+    background: hsl(var(--muted) / 0.2);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid hsl(var(--border) / 0.3);
+    text-align: center;
+  }
+  .sc-round-label {
+    font-size: 0.8rem;
+    color: hsl(var(--muted-fg));
+    margin-bottom: 0.5rem;
+  }
+  .sc-round-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  .sc-round-total {
+    font-size: 1rem;
+    color: hsl(var(--muted-fg));
+  }
+  .sc-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .sc-stat-card {
+    background: hsl(var(--muted) / 0.2);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+  .sc-stat-name {
+    font-size: 0.7rem;
+    color: hsl(var(--muted-fg));
+    margin-bottom: 0.5rem;
+  }
+  .sc-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .sc-stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .sc-bar {
+    flex: 1;
+    height: 6px;
+    background: hsl(var(--muted) / 0.4);
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+  .sc-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 1s;
+  }
+  .sc-review-item {
+    background: hsl(var(--muted) / 0.1);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 1px solid hsl(var(--border) / 0.2);
+    margin-bottom: 0.75rem;
+  }
+  .sc-review-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sc-review-title .score {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+  }
+  .sc-review-text {
+    font-size: 0.75rem;
+    color: hsl(var(--muted-fg));
+    line-height: 1.6;
+    padding-left: 1.5rem;
+  }
+  .sc-section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: hsl(var(--muted-fg));
+    margin-bottom: 1rem;
+  }
+  .sc-proctor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+  }
+  .sc-proctor-card {
+    background: hsl(var(--muted) / 0.2);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 1px solid hsl(var(--border) / 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .sc-proctor-label { font-size: 0.85rem; font-weight: 500; }
+  .sc-proctor-status { font-size: 0.7rem; color: hsl(var(--success)); }
+  .sc-rec-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: hsl(var(--muted) / 0.1);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 1px solid hsl(var(--border) / 0.2);
+    margin-bottom: 0.75rem;
+  }
+  .sc-rec-text {
+    font-size: 0.8rem;
+    color: hsl(var(--muted-fg));
+    line-height: 1.5;
+  }
+  .btn-outline {
+    flex: 1;
+    height: 3rem;
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: hsl(var(--secondary-fg));
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover {
+    background: hsl(var(--secondary) / 0.5);
+    transform: scale(1.01);
+  }
+  .sc-top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    margin: -1rem -1rem 1rem -1rem;
+    background: hsl(var(--bg) / 0.9);
+    border-bottom: 1px solid hsl(var(--border) / 0.5);
+    backdrop-filter: blur(8px);
+  }
+  .sc-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: hsl(var(--primary));
+    background: transparent;
+    border: 1px solid hsl(var(--primary));
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .sc-download-btn:hover {
+    background: hsl(var(--primary) / 0.1);
+  }
+
+  /* Stronger card styling for PDF + light theme */
+  .sc-section.glass {
+    background: #ffffff;
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+  }
+
+  .sc-info-card,
+  .sc-stat-card,
+  .sc-review-item,
+  .sc-rec-item {
+    background: #f5f7fb;
+    border-color: rgba(148, 163, 184, 0.4);
+  }
+
+  .sc-bar {
+    background: rgba(148, 163, 184, 0.3);
+  }
+
+  .sc-bar-fill {
+    box-shadow: 0 0 6px rgba(15, 23, 42, 0.3);
+  }
+  </style>
+</head>
+<body>
+  <!-- ===== SCORECARD SCREEN ===== -->
+  <div id="scorecard" class="screen">
+    <div class="sc-top-bar">
+      <span></span>
+      <button type="button" id="btn-download-pdf" class="sc-download-btn">Download PDF</button>
+    </div>
+    <div class="orb" style="top:5rem;left:25%;width:20rem;height:20rem;background:hsl(var(--primary)/0.1);filter:blur(130px);position:fixed"></div>
+    <div class="orb" style="bottom:5rem;right:25%;width:18rem;height:18rem;background:hsl(var(--accent)/0.08);filter:blur(110px);position:fixed;animation-delay:-3s"></div>
+    <div class="sc-container animate-fade-in" id="sc-content"></div>
+  </div>
+
+  <script>
+    // ===== HELPER FUNCTIONS =====
+    if (!window.aiscorecard) {
+
+window.aiscorecard = true;
+
+
+    function scoreColor(score) {
+      if (score >= 80) return "c-success";
+      if (score >= 60) return "c-warning";
+      return "c-destructive";
+    }
+    
+    function scoreBg(score) {
+      if (score >= 80) return "bg-success";
+      if (score >= 60) return "bg-warning";
+      return "bg-destructive";
+    }
+    
+    // Optional: Generate review text dynamically if backend doesn't provide detailed reviews
+    function generateReviewText(score, skillName) {
+      if (score >= 80) return `Strong understanding of ${skillName}.`;
+      if (score >= 60) return `Average performance in ${skillName}, can improve.`;
+      return `Weak performance in ${skillName}, needs improvement.`;
+    }
+    
+    // ===== FETCH SCORECARD FROM BACKEND =====
+    async function fetchScorecard(sessionId) {
+      const csrftoken = getCookie('csrftoken') || '';
+      try {
+        const response = await fetch("/generate-scorecard/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            'X-CSRFToken': csrftoken, // adjust if using Django CSRF
+          },
+          body: JSON.stringify({ profile_id: sessionId })
+        });
+    
+        if (!response.ok) throw new Error("Failed to fetch scorecard");
+    
+        return await response.json();
+      } catch (err) {
+        console.error(err);
+        alert("Could not load scorecard. Please try again.");
+        return null;
+      }
+    }
+    
+    // ===== RENDER SCORECARD =====
+    async function renderScorecard() {
+      const sessionId = sessionStorage.getItem("currentInterviewSessionId");
+
+      const data = await fetchScorecard(sessionId);
+      console.log(data)
+      if (!data) return;
+    
+      const skillBreakdown = data.skill_breakdown || {};
+      const skillWiseReviews = data.skill_wise_reviews || {};
+      const skillScores = Object.entries(skillBreakdown).map(([name, score]) => ({
+        name,
+        score,
+        review: skillWiseReviews[name] || generateReviewText(score, name)
+      }));
+    
+      const skillAvg = Math.round(data.technical || 0);
+      const commAvg = Math.round(data.communication || 0);
+      const overallScore = Math.round(data.overall || 0);
+    
+      const today = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+      const totalTime = data.total_time || "N/A";
+    
+      $('sc-content').innerHTML = `
+        <!-- Header -->
+        <div class="sc-section glass">
+          <div class="sc-label">Interview Summary</div>
+          <h1 class="sc-name">${data.name}</h1>
+          <div class="sc-meta">
+            <span>Interview date — ${today}</span>
+            <span>Total time — ${totalTime}</span>
+          </div>
+          <h2 class="sc-role text-gradient">${data.role}</h2>
+          <div class="sc-info-grid">
+            <div class="sc-info-card">
+              <div class="label">Experience Level</div>
+              <div class="value">${data.experience_years}</div>
+            </div>
+            <div class="sc-info-card">
+              <div class="label">Target Role</div>
+              <div class="value">${data.role}</div>
+            </div>
+            <div class="sc-info-card">
+              <div class="label">Tech Stack</div>
+              <div class="value">
+                ${
+                  Array.isArray(data.skills) 
+                    ? data.skills.join(", ") 
+                    : (data.skills ? data.skills : 'Not specified')
+                }
+              </div>
+
+            </div>
+          </div>
+        </div>
+    
+        <!-- Round-wise Scores -->
+        <div class="sc-section glass">
+          <div class="sc-heading">Round-wise Scores</div>
+          <div class="sc-round-grid">
+            <div class="sc-round-card">
+              <div class="sc-round-label">Skill Based Round</div>
+              <div class="sc-round-score ${scoreColor(skillAvg)}">${skillAvg}<span class="sc-round-total"> / 100</span></div>
+            </div>
+            <div class="sc-round-card">
+              <div class="sc-round-label">Communication Round</div>
+              <div class="sc-round-score ${scoreColor(commAvg)}">${commAvg}<span class="sc-round-total"> / 100</span></div>
+            </div>
+          </div>
+        </div>
+    
+        <!-- Skill Based Round -->
+        <div class="sc-section glass">
+          <div class="sc-heading" style="justify-content:space-between">
+            <span>Skill Based Round</span>
+            <span class="${scoreColor(skillAvg)}" style="font-family:'JetBrains Mono';font-size:1.2rem;font-weight:700">${skillAvg}/100</span>
+          </div>
+          <div class="sc-section-title">Stats</div>
+          <div class="sc-stats-grid">
+            ${skillScores.map(s => `
+              <div class="sc-stat-card">
+                <div class="sc-stat-name">${s.name}</div>
+                <div class="sc-stat-row">
+                  <span class="sc-stat-val ${scoreColor(s.score)}">${s.score}%</span>
+                  <div class="sc-bar">
+                    <div class="sc-bar-fill ${scoreBg(s.score)}" data-score="${s.score}" style="width:0"></div>
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+          <div class="sc-section-title">Skill-wise Performance Review</div>
+          ${skillScores.map(s => `
+            <div class="sc-review-item">
+              <div class="sc-review-title">
+                ▸ ${s.name}
+                <span class="score ${scoreColor(s.score)}">${s.score}%</span>
+              </div>
+              <div class="sc-review-text">${s.review}</div>
+            </div>`).join('')}
+        </div>
+    
+        <!-- Communication -->
+        <div class="sc-section glass">
+          <div class="sc-heading" style="justify-content:space-between">
+            <span>Communication Analysis</span>
+            <span class="${scoreColor(commAvg)}" style="font-family:'JetBrains Mono';font-size:1.2rem;font-weight:700">${commAvg}/100</span>
+          </div>
+          <div class="sc-review-item">
+            <div class="sc-review-title">Communication Skills Review</div>
+            <div class="sc-review-text">${data.communication_review || "Grammar and professional language evaluated during the interview."}</div>
+          </div>
+        </div>
+    
+        <!-- Final Recommendation -->
+        <div class="sc-section glass">
+          <div class="sc-heading">Final Recommendation</div>
+          <div class="sc-rec-item">
+            <div class="sc-rec-text">${data.recommendation || "No recommendation available"}</div>
+          </div>
+        </div>
+    
+        <!-- Actions -->
+        <div style="display:flex;gap:0.75rem;margin-bottom:2rem">
+          <button class="btn-outline glass" id="btn-restart" style="border:1px solid hsl(var(--border)/0.5)">Retake Interview</button>
+        </div>
+      `;
+    
+      // Restart Button
+      $('btn-restart').addEventListener('click', () => {
+        window.location.reload(); // simple restart
+      });
+
+      // Download PDF
+      const pdfBtn = document.getElementById('btn-download-pdf');
+      if (pdfBtn) {
+        pdfBtn.onclick = function() {
+        const el = document.getElementById('sc-content');
+        if (!el) return;
+
+        pdfBtn.disabled = true;
+        pdfBtn.textContent = 'Optimizing...';
+
+        const opt = {
+          margin: [10, 10, 10, 10],
+          filename = f"Interview_Scorecard_{data.name}.pdf",
+          image: { type: 'jpeg', quality: 1.0 }, // Maximum quality
+          html2canvas: { 
+            scale: 3, // High resolution
+            useCORS: true, 
+            letterRendering: true,
+            scrollY: 0, // Prevents "cutoff" if the user has scrolled down
+            windowWidth: el.scrollWidth // Forces canvas to match content width
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Add a 500ms delay to ensure all UI elements are fully "painted"
+        setTimeout(() => {
+          html2pdf()
+            .set(opt)
+            .from(el)
+            .save()
+            .then(() => {
+              pdfBtn.disabled = false;
+              pdfBtn.textContent = 'Download PDF';
+            });
+        }, 500);
+      };
+      }
+
+      // Animate progress bars after content is in the DOM
+      requestAnimationFrame(() => {
+        document
+          .querySelectorAll('#sc-content .sc-bar-fill')
+          .forEach(el => {
+            const v = Number(el.dataset.score || el.getAttribute('data-score'));
+            const width = Number.isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
+            el.style.width = `${width}%`;
+          });
+      });
+
+      showScreen('scorecard');
+    }
+    
+    // ===== UTILITY: CSRF TOKEN FOR DJANGO =====
+    function getCSRFToken() {
+      return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    }
+
+    window.renderScorecard = renderScorecard;
+  }
+    </script>
+    
+</body>
+</html>
+
+

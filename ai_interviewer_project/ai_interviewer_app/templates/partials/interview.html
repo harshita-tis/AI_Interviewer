@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <style>
+  /* ===== CHAT / INTERVIEW SCREEN ===== */
+  #interview {
+    display: none;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+    position: relative;
+  }
+  #interview.active { display: flex; }
+
+  .chat-topbar {
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+  }
+  .chat-topbar-inner {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 0.75rem; }
+  .topbar-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid hsl(var(--primary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .topbar-title { font-size: 0.875rem; font-weight: 600; }
+  .topbar-sub { font-size: 0.7rem; color: hsl(var(--muted-fg)); }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  /* Progress */
+  .progress-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .progress-text {
+    font-size: 0.7rem;
+    color: hsl(var(--muted-fg));
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .progress-bar {
+    width: 6rem;
+    height: 2px;
+    background: hsl(var(--border));
+  }
+  .progress-fill {
+    height: 100%;
+    background: hsl(var(--primary));
+    transition: width 0.35s ease;
+  }
+
+  /* Mode toggle */
+  .mode-switch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mode-label {
+    font-size: 11px;
+    opacity: 0.6;
+    letter-spacing: 0.5px;
+  }
+  .toggle {
+    width: 38px;
+    height: 20px;
+    border-radius: 20px;
+    border: 1px solid hsl(var(--border));
+    position: relative;
+    cursor: pointer;
+    transition: 0.3s ease;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: hsl(var(--fg));
+    top: 2px;
+    left: 3px;
+    transition: 0.3s ease;
+  }
+  .toggle.active {
+    border-color: hsl(var(--primary));
+  }
+  .toggle.active::after {
+    left: 20px;
+    background: hsl(var(--primary));
+  }
+
+  /* Messages */
+  .messages-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .messages-inner {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .msg-row { display: flex; gap: 0.75rem; }
+  .msg-row.user { flex-direction: row-reverse; }
+  .msg-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+  }
+  .msg-avatar.bot { color: hsl(var(--primary-fg)); }
+  .msg-avatar.human {
+    background: hsl(var(--secondary) / 0.8);
+    color: hsl(var(--secondary-fg));
+  }
+  .msg-bubble {
+    max-width: 70%;
+    padding: 0.9rem 1.1rem;
+    border-radius: 0;
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+  .msg-bubble.bot {
+    border-left: 2px solid hsl(var(--primary));
+    padding-left: 1rem;
+  }
+  .msg-bubble.human {
+    border-right: 2px solid hsl(var(--primary));
+    padding-right: 1rem;
+  }
+
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 0.75rem 1rem;
+  }
+  .typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: hsl(var(--primary) / 0.6);
+    animation: bounce 0.6s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+  .chat-input-bar {
+    border-top: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+  }
+  .chat-input-inner {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .chat-input {
+    flex: 1;
+    height: 3rem;
+    padding: 0 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    background: hsl(var(--muted) / 0.4);
+    border: 1px solid hsl(var(--border) / 0.4);
+    color: hsl(var(--fg));
+    font-family: inherit;
+    outline: none;
+  }
+  .chat-input:focus { border-color: hsl(var(--primary)); }
+
+  .skip-btn {
+    position: relative;
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    color: hsl(var(--muted-fg));
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    transition: color 0.2s ease;
+  }
+  .skip-btn:hover { color: hsl(var(--primary)); }
+  .skip-tooltip {
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: hsl(var(--card));
+    color: hsl(var(--fg));
+    border: 1px solid hsl(var(--border));
+    font-size: 0.7rem;
+    padding: 0.4rem 0.6rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform-origin: bottom;
+  }
+  .skip-btn:hover .skip-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+  }
+
+  .voice-orb {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .voice-orb svg {
+    width: 18px;
+    height: 18px;
+    stroke: hsl(var(--fg));
+    fill: none;
+    stroke-width: 2;
+  }
+  .voice-orb:hover { border-color: hsl(var(--primary)); }
+  .voice-orb.recording {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.1);
+  }
+  .voice-orb.recording svg { stroke: hsl(var(--primary)); }
+
+  .send-orb { border: 1px solid hsl(var(--border)); }
+  .send-orb svg {
+    width: 18px;
+    height: 18px;
+    stroke: hsl(var(--fg));
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .send-orb:hover:not(:disabled) { border-color: hsl(var(--primary)); }
+  .send-orb:hover:not(:disabled) svg { stroke: hsl(var(--primary)); }
+  .send-orb:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Voice-only main button */
+  .voice-only {
+    display: flex;
+    justify-content: center;
+    padding: 1.2rem;
+  }
+  .voice-main-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 1px solid hsl(var(--primary));
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s ease;
+  }
+  .voice-main-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: hsl(var(--primary-fg));
+    fill: none;
+    stroke-width: 1.8;
+  }
+  .voice-main-btn:hover {
+    background: hsl(var(--primary));
+    box-shadow: 0 0 20px rgba(124,58,237,0.4);
+  }
+
+  .hidden { display: none; }
+
+  @media (max-width: 640px) {
+    .chat-input-inner {
+      padding: 0.6rem;
+      gap: 0.4rem;
+    }
+    .chat-input {
+      font-size: 0.85rem;
+      height: 2.6rem;
+    }
+    .voice-orb {
+      width: 2.6rem;
+      height: 2.6rem;
+    }
+    .skip-btn {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.5rem;
+    }
+    .chat-topbar-inner {
+      padding: 0.6rem;
+    }
+    .progress-bar {
+      width: 4rem;
+    }
+  }
+  </style>
+</head>
+<body>
+  <!-- ===== INTERVIEW SCREEN ===== -->
+  <div id="interview" class="screen">
+    <div class="orb" style="top:2rem;right:25%;width:24rem;height:24rem;background:hsl(var(--primary)/0.08);filter:blur(140px);position:fixed"></div>
+    <div class="orb" style="bottom:2rem;left:25%;width:20rem;height:20rem;background:hsl(var(--accent)/0.06);filter:blur(120px);position:fixed"></div>
+    <div class="chat-topbar glass-subtle">
+      <div class="chat-topbar-inner">
+        <div class="topbar-left">
+          <div class="topbar-avatar">
+            <svg width="20" height="20" fill="none" stroke="hsl(var(--primary))" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+          </div>
+          <div>
+            <p class="topbar-title">AI Interviewer</p>
+            <p class="topbar-sub" id="topbar-info"></p>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="progress-wrapper">
+            <span class="progress-text" id="q-counter"></span>
+            <div class="progress-bar">
+              <div class="progress-fill gradient-primary"
+                   id="progress-fill"
+                   style="width:0%">
+              </div>
+            </div>
+          </div>
+          <!-- SIMPLE MODE TOGGLE -->
+          <div class="mode-switch">
+            <span class="mode-label">Text</span>
+            <div class="toggle" id="modeToggle"></div>
+            <span class="mode-label">Voice</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="messages-area" id="messages-area">
+      <div class="messages-inner" id="messages"></div>
+    </div>
+    <div class="chat-input-bar glass-subtle">
+      <!-- TEXT MODE -->
+      <div class="chat-input-inner" id="textModeUI">
+        <!-- Skip -->
+        <button id="btn-skip" class="skip-btn">
+          Skip
+          <span class="skip-tooltip">Skip to next question</span>
+        </button>
+        <!-- Mic -->
+        <button id="btn-mic" class="voice-orb">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3v12M8 7v4a4 4 0 008 0V7M5 11a7 7 0 0014 0"/>
+          </svg>
+        </button>
+        <input class="chat-input" id="chat-input"
+               placeholder="Type your answer..." />
+        <!-- Send -->
+        <button id="btn-send" class="voice-orb send-orb">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12l7-7 7 7"/>
+          </svg>
+        </button>
+      </div>
+      <!-- VOICE MODE ONLY -->
+      <div class="voice-only hidden" id="voiceModeUI">
+        <button class="voice-main-btn" id="voiceConversationBtn">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3v12M8 7v4a4 4 0 008 0V7M5 11a7 7 0 0014 0"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== INTERVIEW LOGIC (dynamic backend controlled) =====
+    if (!window.aiInterviewLoaded) {
+
+    window.aiInterviewLoaded = true;
+  
+    const ESTIMATED_TOTAL_QUESTIONS = 10;
+  
+    let currentQuestionId = null;
+    let questions = [];
+    let questionIndex = 0;
+    let chatMessages = [];
+    let isTyping = false;
+    let isRecording = false;
+    let isVoiceMode = false;
+    let voiceEnabled = false;
+    let recognition = null;
+  
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    }
+  
+    // ================= FETCH NEXT QUESTION =================
+    async function fetchNextQuestion(isFirst = false) {
+      const sessionId = sessionStorage.getItem("currentInterviewSessionId");
+      try {
+        const csrftoken = getCookie('csrftoken') || '';
+  
+        const res = await fetch('/next-question/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+          },
+          body: JSON.stringify({ is_first: isFirst , profile_id: sessionId }),
+        });
+  
+        if (!res.ok) {
+          console.error('Failed to fetch next question', res.status);
+          return { completed: false, question: "Let's continue. Tell me more about a recent project you worked on." };
+        }
+  
+        const data = await res.json();
+  
+        if (data.is_completed) {
+          return { completed: true };
+        }
+  
+        currentQuestionId = data.question_id;
+  
+        return {
+          completed: false,
+          question: data.question
+        };
+  
+      } catch (err) {
+        console.error('Error fetching next question', err);
+        return { completed: false, question: "Let's continue. Tell me more about a recent project you worked on." };
+      }
+    }
+  
+    // ================= START INTERVIEW =================
+    async function startInterview() {
+      questions = [];
+      questionIndex = 0;
+      chatMessages = [];
+  
+      const result = await fetchNextQuestion(true);
+      if (result.completed) return;
+  
+      questions.push(result.question);
+      questionIndex = 1;
+  
+      chatMessages = [{ role: 'assistant', content: result.question }];
+      speakText(result.question);
+  
+      renderMessages();
+      updateProgress();
+      showScreen('interview');
+      $('chat-input').focus();
+    }
+  
+    // ================= RENDER MESSAGES =================
+    function renderMessages() {
+      const c = $('messages');
+      c.innerHTML = chatMessages.map(m => `
+        <div class="msg-row ${m.role === 'user' ? 'user' : ''}">
+          <div class="msg-bubble ${m.role === 'assistant' ? 'bot glass' : 'human'}">
+            ${m.content}
+          </div>
+        </div>
+      `).join('');
+  
+      $('messages-area').scrollTop = $('messages-area').scrollHeight;
+    }
+  
+    // ================= PROGRESS =================
+    function updateProgress() {
+      const total = ESTIMATED_TOTAL_QUESTIONS;
+      const pct = Math.round((questionIndex / total) * 100);
+  
+      $('q-counter').textContent = `Q${questionIndex} of ${total}`;
+      $('progress-fill').style.width = Math.max(5, Math.min(pct, 100)) + '%';
+    }
+  
+    // ================= SEND MESSAGE =================
+    async function sendMessage() {
+      const val = $('chat-input').value.trim();
+      if (!val || isTyping) return;
+  
+      chatMessages.push({ role: 'user', content: val });
+      await submitAnswer(val, false);
+  
+      $('chat-input').value = '';
+      isTyping = true;
+      $('btn-send').disabled = true;
+      $('chat-input').disabled = true;
+  
+      renderMessages();
+  
+      setTimeout(async () => {
+  
+        const result = await fetchNextQuestion(false);
+  
+        if (result.completed) {
+          chatMessages.push({
+            role: 'assistant',
+            content: "Great answers! That concludes our interview. Generating your scorecard..."
+          });
+  
+          isTyping = false;
+          renderMessages();
+          setTimeout(() => renderScorecard(), 2000);
+          return;
+        }
+  
+        const nextQ = result.question;
+  
+        questions.push(nextQ);
+        chatMessages.push({ role: 'assistant', content: nextQ });
+  
+        speakText(nextQ);
+  
+        questionIndex++;
+        updateProgress();
+  
+        isTyping = false;
+        $('chat-input').disabled = false;
+        $('btn-send').disabled = false;
+  
+        renderMessages();
+        $('chat-input').focus();
+  
+      }, 1200);
+    }
+  
+    // ================= SKIP =================
+    async function skipQuestion() {
+      if (isTyping) return;
+  
+      chatMessages.push({ role: 'user', content: "Skipped this question." });
+      renderMessages();
+  
+      await submitAnswer("", true);
+      isTyping = true;
+  
+      setTimeout(async () => {
+  
+        const result = await fetchNextQuestion(false);
+  
+        if (result.completed) {
+          chatMessages.push({ role: 'assistant', content: "Interview completed. Generating scorecard..." });
+          renderMessages();
+          setTimeout(() => renderScorecard(), 1500);
+          return;
+        }
+  
+        const nextQ = result.question;
+  
+        questions.push(nextQ);
+        chatMessages.push({ role: 'assistant', content: nextQ });
+        speakText(nextQ);
+  
+        questionIndex++;
+        updateProgress();
+  
+        isTyping = false;
+        renderMessages();
+  
+      }, 800);
+    }
+  
+    // ================= VOICE =================
+    function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("Speech recognition not supported in this browser.");
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onresult = function(event) {
+    const transcript = event.results[0][0].transcript;
+    $('chat-input').value = transcript;
+    $('btn-send').disabled = false;
+  };
+
+  recognition.onend = function() {
+    isRecording = false;
+    $('btn-mic').classList.remove('recording');
+  };
+}
+  
+    function speakText(text) {
+      if (!voiceEnabled) return;
+  
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.rate = 1;
+      utterance.pitch = 1;
+  
+      speechSynthesis.speak(utterance);
+    }
+  
+    async function submitAnswer(answerText, isSkipped = false) {
+      const csrftoken = getCookie('csrftoken') || '';
+  
+      try {
+        await fetch('/submit-answer/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+          },
+          body: JSON.stringify({
+            question_id: currentQuestionId,
+            answer: answerText,
+            is_skipped: isSkipped,
+            response_time: 0
+          }),
+        });
+      } catch (err) {
+        console.error("Error submitting answer", err);
+      }
+    }
+  
+    // ================= EVENTS =================
+    $('chat-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  
+    $('btn-send').addEventListener('click', sendMessage);
+    $('btn-skip').addEventListener('click', skipQuestion);
+
+    // Mic: start / stop browser speech recognition
+    $('btn-mic').addEventListener('click', () => {
+      if (!recognition) {
+        initSpeechRecognition();
+      }
+      if (!recognition) return;
+
+      if (!isRecording) {
+        recognition.start();
+        isRecording = true;
+        $('btn-mic').classList.add('recording');
+      } else {
+        recognition.stop();
+      }
+    });
+
+    initSpeechRecognition();
+
+
+    window.startInterview = startInterview;
+  }
+  </script>
+  
+</body>
+</html>
+
+

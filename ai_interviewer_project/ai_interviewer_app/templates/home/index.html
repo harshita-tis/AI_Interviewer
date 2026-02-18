@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Interviewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <script>
+    // Simple partial loader: injects <style> and body content, then runs scripts once
+    const __loadedPartials = new Set();
+
+    function __appendStyleTag(styleEl, key) {
+      const style = document.createElement('style');
+      if (key) style.dataset.partial = key;
+      style.textContent = styleEl.textContent || '';
+      document.head.appendChild(style);
+    }
+
+    function __appendScriptTag(oldScript, key) {
+      const script = document.createElement('script');
+      if (key) script.dataset.partial = key;
+
+      if (oldScript.src) {
+        // Keep deterministic order if any external scripts appear later.
+        script.async = false;
+        script.src = oldScript.src;
+        return new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+          document.body.appendChild(script);
+        });
+      }
+
+      script.textContent = oldScript.textContent || '';
+      document.body.appendChild(script);
+      return Promise.resolve();
+    }
+
+    async function loadPartial(path) {
+      if (__loadedPartials.has(path)) return;
+      const res = await fetch(path);
+      const text = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+
+      // Append styles first
+      doc.querySelectorAll('style').forEach(styleEl => __appendStyleTag(styleEl, path));
+
+      // Append body children (screens, etc.)
+      doc.body.childNodes.forEach(node => {
+        // Skip empty text nodes
+        if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) return;
+        // Skip scripts here; we execute them explicitly below (once).
+        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'SCRIPT') return;
+        document.body.appendChild(node);
+      });
+
+      // Execute scripts in order
+      const scripts = Array.from(doc.querySelectorAll('script'));
+      for (const s of scripts) {
+        // eslint-disable-next-line no-await-in-loop
+        await __appendScriptTag(s, path);
+      }
+
+      __loadedPartials.add(path);
+    }
+
+    (async function init() {
+      // Load core (global CSS + shared state/helpers) first
+      await loadPartial("{% url 'partial_template' 'base' %}");
+      // Then screens in order
+      await loadPartial("{% url 'partial_template' 'setup' %}");
+      await loadPartial("{% url 'partial_template' 'interview' %}");
+      await loadPartial("{% url 'partial_template' 'scorecard' %}");
+    })();
+  </script>
+</body>
+</html>
+
+
