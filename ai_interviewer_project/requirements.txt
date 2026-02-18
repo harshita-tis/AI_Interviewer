@@ -1,0 +1,27 @@
+# Django framework
+Django>=4.2
+
+# Django REST framework for APIs
+djangorestframework>=3.14
+
+# JWT support
+PyJWT>=2.8
+djangorestframework-simplejwt>=5.2
+
+# Database drivers (choose depending on your DB)
+psycopg2-binary>=2.9  # For PostgreSQL
+# mysqlclient>=2.1      # Uncomment if using MySQL
+# sqlite3 is built-in, no requirement needed
+
+# CORS headers for cross-origin requests (if using frontend separately)
+django-cors-headers>=4.3
+
+# Environment variable management
+python-dotenv>=1.0
+
+# Optional utilities
+pytz>=2023.3        # Timezone handling (Django usually depends on it)
+djangorestframework-csv>=2.1  # For CSV export in DRF
+
+
+python-decouple>=3.8
